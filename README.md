@@ -2,6 +2,8 @@
 
 A newtype for parallel composition of continuations
 
+- [Module Documentation](docs/README.md)
+
 ## Building
 
 ```
