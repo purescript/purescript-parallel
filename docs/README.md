@@ -10,11 +10,17 @@
 
 ### Type Class Instances
 
+    instance altParallel :: Alt (Parallel eff)
+
+    instance alternativeParallel :: Alternative (Parallel eff)
+
     instance applicativeParallel :: Applicative (Parallel eff)
 
     instance applyParallel :: Apply (Parallel eff)
 
     instance functorParallel :: Functor (Parallel eff)
+
+    instance plusParallel :: Plus (Parallel eff)
 
 
 ### Values
