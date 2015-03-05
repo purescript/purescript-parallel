@@ -14,7 +14,7 @@ module.exports = function(grunt) {
     pscDocs: {
       lib: {
         src: ["src/**/*.purs"],
-        dest: "docs/README.md"
+        dest: "README.md"
       }
     },
 
