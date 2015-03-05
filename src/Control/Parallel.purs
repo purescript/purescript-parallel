@@ -1,4 +1,8 @@
-module Control.Parallel (Parallel(..), runParallel) where
+module Control.Parallel 
+  ( Parallel()
+  , inParallel
+  , runParallel
+  ) where
 
 import Data.Maybe
 
@@ -52,8 +56,36 @@ race c1 c2 = ContT $ \k -> do
         refs $ writeRef done true
         k a
 
+-- | The `Parallel` type constructor wraps the `ContT` type constructor
+-- | and provides type class instances for parallel composition of
+-- | computations:
+-- |
+-- | - The definition of `(<*>)` from `Apply` runs two computations in parallel and applies
+-- |   a function when both complete.
+-- | - The definition of `(<|>)` from the `Alt` type class runs two computations in parallel
+-- |   and returns the result of the computation which completes first.
+-- |
+-- | Parallel sections of code can be embedded in sequential code by using
+-- | the `inParallel` and `runParallel` functions:
+-- |
+-- | ```purescript
+-- | loadModel :: ContT Unit (Eff (ajax :: AJAX)) Model
+-- | loadModel = do
+-- |   token <- authenticate
+-- |   runParallel $
+-- |     Model <$> inParallel (get "/products/popular/" token)
+-- |           <*> inParallel (get "/categories/all" token)
+-- | ```
 newtype Parallel eff a = Parallel (ContT Unit (Eff eff) a)
 
+-- | Create a computation to be run in parallel from a computation in the
+-- | continuation monad.
+-- |
+inParallel :: forall eff a. ContT Unit (Eff eff) a -> Parallel eff a
+inParallel = Parallel
+
+-- | Unwrap a parallel computation so that it may be embedded in sequential code,
+-- | or run using `runContT`.
 runParallel :: forall eff a. Parallel eff a -> ContT Unit (Eff eff) a
 runParallel (Parallel c) = c
 

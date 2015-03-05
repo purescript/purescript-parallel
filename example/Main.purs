@@ -43,7 +43,7 @@ request :: String -> Request
 request host = Request { host: host, path: "/" }
 
 app :: forall eff. ContT Unit (Eff (http :: HTTP | eff)) [String]
-app = runParallel $ traverse (Parallel <<< get <<< request) resources
+app = runParallel $ traverse (inParallel <<< get <<< request) resources
   where
   resources :: [String]
   resources = 
