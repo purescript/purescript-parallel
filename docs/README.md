@@ -45,7 +45,7 @@ continuation monad.
 withCallback :: forall eff a. ((a -> Eff eff Unit) -> Eff eff Unit) -> Parallel eff a
 ```
 
-Create a parallel computation from an actions which takes a callback
+Create a parallel computation from an action which uses a callback.
 
 This function is just shorthand for `inParallel <<< ContT`.
 
