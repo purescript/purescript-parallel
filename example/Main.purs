@@ -9,7 +9,6 @@ import Control.Parallel
 
 import Control.Alt
 import Control.Monad.Eff
-import Control.Monad.Cont.Trans
 
 newtype Request = Request
   { host :: String
@@ -42,8 +41,8 @@ get req = withCallback $ \k -> runFn2 getImpl req k
 request :: String -> Request
 request host = Request { host: host, path: "/" }
 
-app :: forall eff. ContT Unit (Eff (http :: HTTP | eff)) [String]
-app = runParallel $ traverse (get <<< request) resources
+main :: forall eff. Eff (http :: HTTP, trace :: Trace | eff) Unit
+main = runParallelWith print $ traverse (get <<< request) resources
   where
   resources :: [String]
   resources = 
@@ -51,6 +50,4 @@ app = runParallel $ traverse (get <<< request) resources
     , "try.purescript.org"
     , "community.purescript.org"
     ]
-
-main = runContT app print
 

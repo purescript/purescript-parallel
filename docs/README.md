@@ -58,6 +58,16 @@ runParallel :: forall eff a. Parallel eff a -> ContT Unit (Eff eff) a
 Unwrap a parallel computation so that it may be embedded in sequential code,
 or run using `runContT`.
 
+#### `runParallelWith`
+
+``` purescript
+runParallelWith :: forall eff a. (a -> Eff eff Unit) -> Parallel eff a -> Eff eff Unit
+```
+
+Run a parallel computation by providing a callback
+
+This function is just shorthand for `runContT` composed with `runParallel`.
+
 #### `functorParallel`
 
 ``` purescript

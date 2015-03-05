@@ -2,6 +2,7 @@ module Control.Parallel
   ( Parallel()
   , inParallel
   , runParallel
+  , runParallelWith
   , withCallback
   ) where
 
@@ -95,6 +96,12 @@ withCallback = inParallel <<< ContT
 -- | or run using `runContT`.
 runParallel :: forall eff a. Parallel eff a -> ContT Unit (Eff eff) a
 runParallel (Parallel c) = c
+
+-- | Run a parallel computation by providing a callback
+-- |
+-- | This function is just shorthand for `runContT` composed with `runParallel`.
+runParallelWith :: forall eff a. (a -> Eff eff Unit) -> Parallel eff a -> Eff eff Unit
+runParallelWith k p = runContT (runParallel p) k
 
 instance functorParallel :: Functor (Parallel eff) where
   (<$>) f (Parallel c) = Parallel (f <$> c)
