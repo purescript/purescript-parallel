@@ -39,6 +39,16 @@ Create a computation to be run in parallel from a computation in the
 continuation monad.
 
 
+#### `withCallback`
+
+``` purescript
+withCallback :: forall eff a. ((a -> Eff eff Unit) -> Eff eff Unit) -> Parallel eff a
+```
+
+Create a parallel computation from an actions which takes a callback
+
+This function is just shorthand for `inParallel <<< ContT`.
+
 #### `runParallel`
 
 ``` purescript

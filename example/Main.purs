@@ -36,14 +36,14 @@ foreign import getImpl """
                           (String -> Eff (http :: HTTP | eff) Unit) 
                           (Eff (http :: HTTP | eff) Unit)
 
-get :: forall eff. Request -> ContT Unit (Eff (http :: HTTP | eff)) String
-get req = ContT $ \k -> runFn2 getImpl req k
+get :: forall eff. Request -> Parallel (http :: HTTP | eff) String
+get req = withCallback $ \k -> runFn2 getImpl req k
 
 request :: String -> Request
 request host = Request { host: host, path: "/" }
 
 app :: forall eff. ContT Unit (Eff (http :: HTTP | eff)) [String]
-app = runParallel $ traverse (inParallel <<< get <<< request) resources
+app = runParallel $ traverse (get <<< request) resources
   where
   resources :: [String]
   resources = 
