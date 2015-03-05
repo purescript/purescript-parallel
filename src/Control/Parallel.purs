@@ -85,7 +85,7 @@ newtype Parallel eff a = Parallel (ContT Unit (Eff eff) a)
 inParallel :: forall eff a. ContT Unit (Eff eff) a -> Parallel eff a
 inParallel = Parallel
 
--- | Create a parallel computation from an actions which takes a callback
+-- | Create a parallel computation from an action which uses a callback.
 -- |
 -- | This function is just shorthand for `inParallel <<< ContT`.
 withCallback :: forall eff a. ((a -> Eff eff Unit) -> Eff eff Unit) -> Parallel eff a
