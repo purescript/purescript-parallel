@@ -18,7 +18,7 @@ import Control.Monad.Eff.Unsafe
 
 import Control.Monad.Cont.Trans
 
-refs :: forall eff a. Eff (ref :: Ref | eff) a -> Eff eff a
+refs :: forall eff a. Eff (ref :: REF | eff) a -> Eff eff a
 refs = unsafeInterleaveEff
 
 par :: forall a b r eff. (a -> b -> r) -> ContT Unit (Eff eff) a -> ContT Unit (Eff eff) b -> ContT Unit (Eff eff) r

@@ -3,7 +3,7 @@ module Main where
 import Data.Function
 import Data.Traversable
 
-import Debug.Trace
+import Console 
 
 import Control.Parallel
 
@@ -41,7 +41,7 @@ get req = withCallback $ \k -> runFn2 getImpl req k
 request :: String -> Request
 request host = Request { host: host, path: "/" }
 
-main :: forall eff. Eff (http :: HTTP, trace :: Trace | eff) Unit
+main :: forall eff. Eff (http :: HTTP, console :: CONSOLE | eff) Unit
 main = runParallelWith print $ traverse (get <<< request) resources
   where
   resources :: [String]
