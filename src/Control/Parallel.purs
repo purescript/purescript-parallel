@@ -6,6 +6,8 @@ module Control.Parallel
   , withCallback
   ) where
 
+import Prelude
+
 import Data.Maybe
 
 import Control.Alt
@@ -104,16 +106,16 @@ runParallelWith :: forall eff a. (a -> Eff eff Unit) -> Parallel eff a -> Eff ef
 runParallelWith k p = runContT (runParallel p) k
 
 instance functorParallel :: Functor (Parallel eff) where
-  (<$>) f (Parallel c) = Parallel (f <$> c)
+  map f (Parallel c) = Parallel (f <$> c)
 
 instance applyParallel :: Apply (Parallel eff) where
-  (<*>) (Parallel f) (Parallel x) = Parallel (par ($) f x)
+  apply (Parallel f) (Parallel x) = Parallel (par ($) f x)
 
 instance applicativeParallel :: Applicative (Parallel eff) where
   pure a = Parallel $ pure a
 
 instance altParallel :: Alt (Parallel eff) where
-  (<|>) (Parallel c1) (Parallel c2) = Parallel (race c1 c2)
+  alt (Parallel c1) (Parallel c2) = Parallel (race c1 c2)
 
 instance plusParallel :: Plus (Parallel eff) where
   empty = Parallel $ ContT $ \_ -> return unit

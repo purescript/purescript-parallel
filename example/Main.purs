@@ -1,5 +1,7 @@
 module Main where
 
+import Prelude
+
 import Data.Function
 import Data.Traversable
 
@@ -44,7 +46,7 @@ request host = Request { host: host, path: "/" }
 main :: forall eff. Eff (http :: HTTP, console :: CONSOLE | eff) Unit
 main = runParallelWith print $ traverse (get <<< request) resources
   where
-  resources :: [String]
+  resources :: Array String
   resources = 
     [ "www.purescript.org"
     , "try.purescript.org"
