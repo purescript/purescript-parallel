@@ -1,5 +1,23 @@
 ## Module Control.Parallel
 
+#### `par`
+
+``` purescript
+par :: forall a b r eff. (a -> b -> r) -> ContT Unit (Eff eff) a -> ContT Unit (Eff eff) b -> ContT Unit (Eff eff) r
+```
+
+Run two asynchronous computations in parallel, using the specified
+function to combine their results once both have completed.
+
+#### `race`
+
+``` purescript
+race :: forall a eff. ContT Unit (Eff eff) a -> ContT Unit (Eff eff) a -> ContT Unit (Eff eff) a
+```
+
+Run two asynchronous computations in parallel, returning the result
+from the computation which finishes first.
+
 #### `Parallel`
 
 ``` purescript
