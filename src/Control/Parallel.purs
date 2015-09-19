@@ -4,6 +4,8 @@ module Control.Parallel
   , runParallel
   , runParallelWith
   , withCallback
+  , par
+  , race
   ) where
 
 import Prelude
@@ -23,6 +25,8 @@ import Control.Monad.Cont.Trans
 refs :: forall eff a. Eff (ref :: REF | eff) a -> Eff eff a
 refs = unsafeInterleaveEff
 
+-- | Run two asynchronous computations in parallel, using the specified
+-- | function to combine their results once both have completed.
 par :: forall a b r eff. (a -> b -> r) -> ContT Unit (Eff eff) a -> ContT Unit (Eff eff) b -> ContT Unit (Eff eff) r
 par f ca cb = ContT $ \k -> do
   ra <- refs $ newRef Nothing
@@ -40,6 +44,8 @@ par f ca cb = ContT $ \k -> do
       Nothing -> refs $ writeRef rb $ Just b
       Just a -> k (f a b)
 
+-- | Run two asynchronous computations in parallel, returning the result
+-- | from the computation which finishes first.
 race :: forall a eff. ContT Unit (Eff eff) a -> ContT Unit (Eff eff) a -> ContT Unit (Eff eff) a
 race c1 c2 = ContT $ \k -> do
   done <- refs $ newRef false
