@@ -1,4 +1,4 @@
-module Control.Parallel 
+module Control.Parallel
   ( Parallel()
   , inParallel
   , runParallel
@@ -8,19 +8,19 @@ module Control.Parallel
   , race
   ) where
 
-import Prelude
+import Prelude (class Applicative, class Apply, class Functor, Unit, unit, return, ($), pure, (<$>), (<<<), bind)
 
-import Data.Maybe
+import Data.Maybe (Maybe(Just, Nothing))
 
-import Control.Alt
-import Control.Alternative
-import Control.Plus
+import Control.Alt (class Alt)
+import Control.Alternative (class Alternative)
+import Control.Plus (class Plus)
 
-import Control.Monad.Eff
-import Control.Monad.Eff.Ref
-import Control.Monad.Eff.Unsafe
+import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Ref (REF, writeRef, readRef, newRef)
+import Control.Monad.Eff.Unsafe (unsafeInterleaveEff)
 
-import Control.Monad.Cont.Trans
+import Control.Monad.Cont.Trans (ContT(ContT), runContT)
 
 refs :: forall eff a. Eff (ref :: REF | eff) a -> Eff eff a
 refs = unsafeInterleaveEff
@@ -31,7 +31,7 @@ par :: forall a b r eff. (a -> b -> r) -> ContT Unit (Eff eff) a -> ContT Unit (
 par f ca cb = ContT $ \k -> do
   ra <- refs $ newRef Nothing
   rb <- refs $ newRef Nothing
-  
+
   runContT ca $ \a -> do
     mb <- refs $ readRef rb
     case mb of
