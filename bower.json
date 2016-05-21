@@ -1,7 +1,6 @@
 {
   "name": "purescript-parallel",
   "description": "A newtype for parallel composition of continuations",
-  "keywords": ["purescript"],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -17,10 +16,10 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-refs": "^0.2.0",
-    "purescript-transformers": "^0.8.1"
+    "purescript-refs": "^1.0.0-rc.1",
+    "purescript-transformers": "^1.0.0-rc.1"
   },
   "devDependencies": {
-    "purescript-console": "^0.1.0"
+    "purescript-console": "^1.0.0-rc.1"
   }
 }
