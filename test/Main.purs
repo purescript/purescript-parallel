@@ -1,13 +1,11 @@
 module Test.Main where
 
-import Prelude
+import Prelude (Unit, (<<<))
 
-import Control.Alt
 import Control.Monad.Cont.Trans (ContT(..), runContT)
-import Control.Monad.Eff
-import Control.Monad.Eff.Console
-import Control.Parallel.Class
-import Data.Function.Uncurried (Fn2, runFn2)
+import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Console (CONSOLE, logShow)
+import Control.Parallel.Class (parTraverse)
 
 newtype Request = Request
   { host :: String
@@ -18,12 +16,12 @@ foreign import data HTTP :: !
 
 foreign import getImpl
   :: forall eff
-   . Fn2 Request
-         (String -> Eff (http :: HTTP | eff) Unit)
-         (Eff (http :: HTTP | eff) Unit)
+   . Request
+  -> (String -> Eff (http :: HTTP | eff) Unit)
+  -> Eff (http :: HTTP | eff) Unit
 
 get :: forall eff. Request -> ContT Unit (Eff (http :: HTTP | eff)) String
-get req = ContT \k -> runFn2 getImpl req k
+get req = ContT (getImpl req)
 
 request :: String -> Request
 request host = Request { host: host, path: "/" }
