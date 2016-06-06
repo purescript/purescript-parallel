@@ -11,18 +11,7 @@ module Control.Parallel.Class
   , runParallel
   ) where
 
-import Prelude ( class Applicative
-               , class Apply
-               , class Functor
-               , class Monad
-               , (<<<)
-               , ($)
-               , bind
-               , map
-               , pure
-               , unit
-               , Unit
-               )
+import Prelude
 
 import Control.Alt (class Alt)
 import Control.Alternative (class Alternative)
