@@ -1,12 +1,11 @@
 module Test.Main where
 
-import Prelude
+import Prelude (Unit, (<<<))
 
-import Data.Traversable (traverse)
-
+import Control.Monad.Cont.Trans (ContT(..), runContT)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, logShow)
-import Control.Parallel (Parallel, runParallelWith, withCallback)
+import Control.Parallel.Class (parTraverse)
 
 newtype Request = Request
   { host :: String
@@ -21,19 +20,18 @@ foreign import getImpl
   -> (String -> Eff (http :: HTTP | eff) Unit)
   -> Eff (http :: HTTP | eff) Unit
 
-get :: forall eff. Request -> Parallel (http :: HTTP | eff) String
-get req = withCallback (getImpl req)
+get :: forall eff. Request -> ContT Unit (Eff (http :: HTTP | eff)) String
+get req = ContT (getImpl req)
 
 request :: String -> Request
 request host = Request { host: host, path: "/" }
 
 main :: forall eff. Eff (http :: HTTP, console :: CONSOLE | eff) Unit
-main = runParallelWith logShow $ traverse (get <<< request) resources
+main = runContT (parTraverse (get <<< request) resources) logShow
   where
-  resources :: Array String
-  resources =
-    [ "www.purescript.org"
-    , "try.purescript.org"
-    , "community.purescript.org"
-    ]
-
+    resources :: Array String
+    resources =
+      [ "www.purescript.org"
+      , "try.purescript.org"
+      , "community.purescript.org"
+      ]
