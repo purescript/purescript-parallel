@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/purescript/purescript-parallel.svg?branch=master)](https://travis-ci.org/purescript/purescript-parallel)
 [![Dependency Status](https://www.versioneye.com/user/projects/55848caf363861001d00034a/badge.svg?style=flat)](https://www.versioneye.com/user/projects/55848caf363861001d00034a)
 
-An applicative functor for parallel composition of asynchronous computations
+Classes for parallel composition and racing of asynchronous computations.
 
 ## Installation
 
@@ -12,6 +12,6 @@ An applicative functor for parallel composition of asynchronous computations
 bower install purescript-parallel
 ```
 
-## Module documentation
+## Documentation
 
-- [Control.Parallel](docs/Control/Parallel.md)
+Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-parallel).
