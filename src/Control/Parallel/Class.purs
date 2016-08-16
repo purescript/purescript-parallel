@@ -17,15 +17,20 @@ import Control.Alt (class Alt)
 import Control.Alternative (class Alternative)
 import Control.Apply (lift2)
 import Control.Monad.Cont.Trans (ContT(..), runContT)
-import Control.Monad.Except.Trans (ExceptT(..))
-import Control.Monad.Reader.Trans (ReaderT(..))
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Ref (REF, writeRef, readRef, newRef)
 import Control.Monad.Eff.Unsafe (unsafeInterleaveEff)
+import Control.Monad.Except.Trans (ExceptT(..))
+import Control.Monad.Reader.Trans (ReaderT(..))
+import Control.Monad.Maybe.Trans (MaybeT(..))
+import Control.Monad.Writer.Trans (WriterT(..))
 import Control.Plus (class Plus)
-import Data.Maybe (Maybe(..))
+
 import Data.Foldable (class Foldable, traverse_)
+import Data.Maybe (Maybe(..))
+import Data.Monoid (class Monoid)
 import Data.Traversable (class Traversable, traverse)
+import Data.Tuple (Tuple(..))
 
 -- | The `MonadPar` class abstracts over monads which support some notion of
 -- | parallel composition.
@@ -35,6 +40,37 @@ import Data.Traversable (class Traversable, traverse)
 -- | the underlying `Monad`.
 class Monad m <= MonadPar m where
   par :: forall a b c. (a -> b -> c) -> m a -> m b -> m c
+
+instance monadParContT :: MonadPar (ContT Unit (Eff eff)) where
+  par f ca cb = ContT \k -> do
+    ra <- unsafeWithRef (newRef Nothing)
+    rb <- unsafeWithRef (newRef Nothing)
+
+    runContT ca \a -> do
+      mb <- unsafeWithRef (readRef rb)
+      case mb of
+        Nothing -> unsafeWithRef (writeRef ra (Just a))
+        Just b -> k (f a b)
+
+    runContT cb \b -> do
+      ma <- unsafeWithRef (readRef ra)
+      case ma of
+        Nothing -> unsafeWithRef (writeRef rb (Just b))
+        Just a -> k (f a b)
+
+instance monadParExceptT :: MonadPar m => MonadPar (ExceptT e m) where
+  par f (ExceptT e1) (ExceptT e2) = ExceptT (par (lift2 f) e1 e2)
+
+instance monadParMaybeT :: MonadPar m => MonadPar (MaybeT m) where
+  par f (MaybeT m1) (MaybeT m2) = MaybeT (par (lift2 f) m1 m2)
+
+instance monadParReaderT :: MonadPar m => MonadPar (ReaderT e m) where
+  par f (ReaderT r1) (ReaderT r2) = ReaderT \r -> par f (r1 r) (r2 r)
+
+instance monadParWriterT :: (Monoid w, MonadPar m) => MonadPar (WriterT w m) where
+  par f (WriterT w1) (WriterT w2) =
+    WriterT $
+      par (\(Tuple a wa) (Tuple b wb) → Tuple (f a b) (wa <> wb)) w1 w2
 
 -- | Traverse a collection in parallel, discarding any results.
 parTraverse_
@@ -65,29 +101,6 @@ class MonadPar m <= MonadRace m where
 unsafeWithRef :: forall eff a. Eff (ref :: REF | eff) a -> Eff eff a
 unsafeWithRef = unsafeInterleaveEff
 
-instance monadParContT :: MonadPar (ContT Unit (Eff eff)) where
-  par f ca cb = ContT \k -> do
-    ra <- unsafeWithRef (newRef Nothing)
-    rb <- unsafeWithRef (newRef Nothing)
-
-    runContT ca \a -> do
-      mb <- unsafeWithRef (readRef rb)
-      case mb of
-        Nothing -> unsafeWithRef (writeRef ra (Just a))
-        Just b -> k (f a b)
-
-    runContT cb \b -> do
-      ma <- unsafeWithRef (readRef ra)
-      case ma of
-        Nothing -> unsafeWithRef (writeRef rb (Just b))
-        Just a -> k (f a b)
-
-instance monadParExceptT :: MonadPar m => MonadPar (ExceptT e m) where
-  par f (ExceptT e1) (ExceptT e2) = ExceptT (par (lift2 f) e1 e2)
-
-instance monadParReaderT :: MonadPar m => MonadPar (ReaderT e m) where
-  par f (ReaderT r1) (ReaderT r2) = ReaderT \r -> par f (r1 r) (r2 r)
-
 instance monadRaceContT :: MonadRace (ContT Unit (Eff eff)) where
   stall = ContT \_ -> pure unit
   race c1 c2 = ContT \k -> do
@@ -113,9 +126,17 @@ instance monadRaceExceptT :: MonadRace m => MonadRace (ExceptT e m) where
   stall = ExceptT stall
   race (ExceptT e1) (ExceptT e2) = ExceptT (race e1 e2)
 
+instance monadRaceMaybeT :: MonadRace m => MonadRace (MaybeT m) where
+  stall = MaybeT stall
+  race (MaybeT m1) (MaybeT m2) = MaybeT (race m1 m2)
+
 instance monadRaceReaderT :: MonadRace m => MonadRace (ReaderT e m) where
   stall = ReaderT \_ -> stall
   race (ReaderT r1) (ReaderT r2) = ReaderT \r -> race (r1 r) (r2 r)
+
+instance monadRaceWriterT :: (Monoid w, MonadRace m) => MonadRace (WriterT w m) where
+  stall = WriterT stall
+  race (WriterT w1) (WriterT w2) = WriterT (race w1 w2)
 
 -- | The `Parallel` type constructor provides `Applicative` and `Alternative`
 -- | instances for any type monad with `MonadPar` and `MonadRace` instances
