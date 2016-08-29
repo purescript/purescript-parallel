@@ -172,7 +172,10 @@ instance monadForkReaderT:: MonadFork m => MonadFork (ReaderT r m) where
   cancelWith (ReaderT ma) c =
     ReaderT \r -> cancelWith (ma r) (mapCanceler (\(ReaderT mb) -> mb r) c)
 
--- | A canceler for a forked computation.
+-- | A canceler for a forked computation. The `Boolean` return value should
+-- | indicate whether the computation was actually canceled when the `Canceler`
+-- | was run - if the computation has completed or already been canceled then
+-- | this should be false, indicating the `Canceler` had no effect.
 newtype Canceler m = Canceler (CancelReason -> m Boolean)
 
 instance semigroupCanceler :: Apply m => Semigroup (Canceler m) where
@@ -181,9 +184,13 @@ instance semigroupCanceler :: Apply m => Semigroup (Canceler m) where
 instance monoidCanceler :: Applicative m => Monoid (Canceler m) where
   mempty = Canceler (const (pure true))
 
--- | The reason for canceling a forked computation.
+-- | The reason for canceling a forked computation - this may be used to
+-- | construct an error message when a computation is aborted.
 newtype CancelReason = CancelReason String
 
+-- | Runs a canceler with the provided reason. The return value indicates
+-- | whether running the canceler had any effect - if the computation had
+-- | already completed or been canceled then this will be `false`.
 cancel :: forall m. CancelReason -> Canceler m -> m Boolean
 cancel e (Canceler f) = f e
 
