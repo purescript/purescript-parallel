@@ -6,6 +6,13 @@ module Control.Parallel.Class
   , class MonadRace
   , stall
   , race
+  , class MonadFork
+  , fork
+  , cancelWith
+  , Canceler(..)
+  , CancelReason(..)
+  , cancel
+  , mapCanceler
   , Parallel
   , parallel
   , runParallel
@@ -21,13 +28,15 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Ref (REF, writeRef, readRef, newRef)
 import Control.Monad.Eff.Unsafe (unsafeInterleaveEff)
 import Control.Monad.Except.Trans (ExceptT(..))
-import Control.Monad.Reader.Trans (ReaderT(..))
 import Control.Monad.Maybe.Trans (MaybeT(..))
+import Control.Monad.Reader.Trans (ReaderT(..))
+import Control.Monad.Trans (lift)
 import Control.Monad.Writer.Trans (WriterT(..))
 import Control.Plus (class Plus)
 
+import Data.Either (Either(..), either)
 import Data.Foldable (class Foldable, traverse_)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Monoid (class Monoid)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (Tuple(..))
@@ -35,9 +44,9 @@ import Data.Tuple (Tuple(..))
 -- | The `MonadPar` class abstracts over monads which support some notion of
 -- | parallel composition.
 -- |
--- | The `unit` and `par` functions should correspond to `pure` and `lift2` for
--- | some valid `Applicative` instance, but that instance need not arise from
--- | the underlying `Monad`.
+-- | The `par` function should correspond to `lift2` for some valid
+-- | `Applicative` instance, but that instance need not arise from the
+-- | underlying `Monad`.
 class Monad m <= MonadPar m where
   par :: forall a b c. (a -> b -> c) -> m a -> m b -> m c
 
@@ -70,7 +79,7 @@ instance monadParReaderT :: MonadPar m => MonadPar (ReaderT e m) where
 instance monadParWriterT :: (Monoid w, MonadPar m) => MonadPar (WriterT w m) where
   par f (WriterT w1) (WriterT w2) =
     WriterT $
-      par (\(Tuple a wa) (Tuple b wb) → Tuple (f a b) (wa <> wb)) w1 w2
+      par (\(Tuple a wa) (Tuple b wb) -> Tuple (f a b) (wa <> wb)) w1 w2
 
 -- | Traverse a collection in parallel, discarding any results.
 parTraverse_
@@ -137,6 +146,49 @@ instance monadRaceReaderT :: MonadRace m => MonadRace (ReaderT e m) where
 instance monadRaceWriterT :: (Monoid w, MonadRace m) => MonadRace (WriterT w m) where
   stall = WriterT stall
   race (WriterT w1) (WriterT w2) = WriterT (race w1 w2)
+
+-- | The `MonadFork` class abstracts over monads which support some notion of
+-- | being forked from the current "thread".
+-- |
+-- | `fork` and `cancelWith` should obey the following law:
+-- | - ``fork m >>= cancel e = fork (m `cancelWith` Canceler (const (pure true))) >>= cancel e``
+class Monad m <= MonadFork m where
+  fork :: forall a. m a -> m (Canceler m)
+  cancelWith :: forall a. m a -> Canceler m -> m a
+
+instance monadForkExceptT :: MonadFork m => MonadFork (ExceptT r m) where
+  fork (ExceptT ma) = ExceptT (Right <<< mapCanceler lift <$> fork ma)
+  cancelWith (ExceptT ma) c =
+    ExceptT (cancelWith ma (mapCanceler (\(ExceptT mb) -> mb >>= either (const (pure false)) pure) c))
+
+instance monadForkMaybeT :: MonadFork m => MonadFork (MaybeT m) where
+  fork (MaybeT ma) = MaybeT (Just <<< mapCanceler lift <$> fork ma)
+  cancelWith (MaybeT ma) c =
+    MaybeT (cancelWith ma (mapCanceler (\(MaybeT mb) -> mb >>= maybe (pure false) pure) c))
+
+instance monadForkReaderT:: MonadFork m => MonadFork (ReaderT r m) where
+  fork (ReaderT ma) =
+    ReaderT \r -> mapCanceler lift <$> fork (ma r)
+  cancelWith (ReaderT ma) c =
+    ReaderT \r -> cancelWith (ma r) (mapCanceler (\(ReaderT mb) -> mb r) c)
+
+-- | A canceler for a forked computation.
+newtype Canceler m = Canceler (CancelReason -> m Boolean)
+
+instance semigroupCanceler :: Apply m => Semigroup (Canceler m) where
+  append (Canceler f1) (Canceler f2) = Canceler (\e -> (||) <$> f1 e <*> f2 e)
+
+instance monoidCanceler :: Applicative m => Monoid (Canceler m) where
+  mempty = Canceler (const (pure true))
+
+-- | The reason for canceling a forked computation.
+newtype CancelReason = CancelReason String
+
+cancel :: forall m. CancelReason -> Canceler m -> m Boolean
+cancel e (Canceler f) = f e
+
+mapCanceler :: forall m n. (m Boolean -> n Boolean) -> Canceler m -> Canceler n
+mapCanceler f (Canceler g) = Canceler (f <<< g)
 
 -- | The `Parallel` type constructor provides `Applicative` and `Alternative`
 -- | instances for any type monad with `MonadPar` and `MonadRace` instances
