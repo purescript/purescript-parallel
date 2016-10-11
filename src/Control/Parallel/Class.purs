@@ -19,7 +19,7 @@ import Control.Apply (lift2)
 import Control.Monad.Cont.Trans (ContT(..), runContT)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Ref (REF, writeRef, readRef, newRef)
-import Control.Monad.Eff.Unsafe (unsafeInterleaveEff)
+import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 import Control.Monad.Except.Trans (ExceptT(..))
 import Control.Monad.Reader.Trans (ReaderT(..))
 import Control.Monad.Maybe.Trans (MaybeT(..))
@@ -99,7 +99,7 @@ class MonadPar m <= MonadRace m where
   race :: forall a. m a -> m a -> m a
 
 unsafeWithRef :: forall eff a. Eff (ref :: REF | eff) a -> Eff eff a
-unsafeWithRef = unsafeInterleaveEff
+unsafeWithRef = unsafeCoerceEff
 
 instance monadRaceContT :: MonadRace (ContT Unit (Eff eff)) where
   stall = ContT \_ -> pure unit
