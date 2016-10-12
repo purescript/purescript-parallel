@@ -14,13 +14,15 @@ import Control.Monad.Cont.Trans (ContT(..), runContT)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Ref (REF, writeRef, readRef, newRef)
-import Control.Monad.Eff.Unsafe (unsafeInterleaveEff)
-import Control.Monad.Except (mapExceptT)
-import Control.Monad.Except.Trans (ExceptT)
+import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
+import Control.Monad.Except.Trans (ExceptT(..))
+import Control.Monad.Maybe.Trans (MaybeT(..))
 import Control.Monad.Reader.Trans (mapReaderT, ReaderT)
 import Control.Monad.Writer.Trans (mapWriterT, WriterT)
 import Control.Plus (class Plus)
+import Data.Either (Either)
 import Data.Foldable (class Foldable, traverse_)
+import Data.Functor.Compose (Compose(..))
 import Data.Maybe (Maybe(..))
 import Data.Monoid (class Monoid)
 import Data.Traversable (class Traversable, traverse)
@@ -118,9 +120,9 @@ instance monadParParallel :: MonadEff eff m => MonadPar (Parallel m) (ContT Unit
   parallel = Parallel
   sequential (Parallel ma) = ma
 
-instance monadParExceptT :: MonadPar f m => MonadPar (ExceptT e f) (ExceptT e m) where
-  parallel = mapExceptT parallel
-  sequential = mapExceptT sequential
+instance monadParExceptT :: MonadPar f m => MonadPar (Compose f (Either e)) (ExceptT e m) where
+  parallel (ExceptT ma) = Compose (parallel ma)
+  sequential (Compose fa) = ExceptT (sequential fa)
 
 instance monadParReaderT :: MonadPar f m => MonadPar (ReaderT e f) (ReaderT e m) where
   parallel = mapReaderT parallel
@@ -130,12 +132,9 @@ instance monadParWriterT :: (Monoid w, MonadPar f m) => MonadPar (WriterT w f) (
   parallel = mapWriterT parallel
   sequential = mapWriterT sequential
 
--- This instance doesn't work yet, since the Applicative instance for MaybeT is
--- too restrictive.
-
--- instance monadParMaybeT :: MonadPar f m => MonadPar (MaybeT f) (MaybeT m) where
---   parallel = mapMaybeT ?p
---   sequential = mapMaybeT ?s
+instance monadParMaybeT :: MonadPar f m => MonadPar (Compose f Maybe) (MaybeT m) where
+  parallel (MaybeT ma) = Compose (parallel ma)
+  sequential (Compose fa) = MaybeT (sequential fa)
 
 unsafeWithRef :: forall eff a. Eff (ref :: REF | eff) a -> Eff eff a
-unsafeWithRef = unsafeInterleaveEff
+unsafeWithRef = unsafeCoerceEff
