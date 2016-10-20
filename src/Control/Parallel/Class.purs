@@ -1,13 +1,12 @@
 module Control.Parallel.Class
-  ( class MonadPar
-  , parTraverse_
-  , parTraverse
-  , Parallel
+  ( class Parallel
   , parallel
   , sequential
+  , ParCont(..)
   ) where
 
 import Prelude
+
 import Control.Alt (class Alt)
 import Control.Alternative (class Alternative)
 import Control.Monad.Cont.Trans (ContT(..), runContT)
@@ -19,43 +18,42 @@ import Control.Monad.Except.Trans (ExceptT(..))
 import Control.Monad.Maybe.Trans (MaybeT(..))
 import Control.Monad.Reader.Trans (mapReaderT, ReaderT)
 import Control.Monad.Writer.Trans (mapWriterT, WriterT)
+import Control.Parallel.Class (class Parallel, parallel, sequential)
 import Control.Plus (class Plus)
+
 import Data.Either (Either)
-import Data.Foldable (class Foldable, traverse_)
 import Data.Functor.Compose (Compose(..))
 import Data.Maybe (Maybe(..))
 import Data.Monoid (class Monoid)
-import Data.Traversable (class Traversable, traverse)
+import Data.Newtype (class Newtype)
 
--- | The `MonadPar` class abstracts over monads which support
+-- | The `Parallel` class abstracts over monads which support
 -- | parallel composition via some related `Applicative`.
-class (Monad m, Applicative f) <= MonadPar f m | m -> f, f -> m where
+class (Monad m, Applicative f) <= Parallel f m | m -> f, f -> m where
   parallel   :: m ~> f
   sequential :: f ~> m
 
--- | Traverse a collection in parallel, discarding any results.
-parTraverse_
-  :: forall f m t a b
-   . (MonadPar f m, Foldable t)
-  => (a -> m b)
-  -> t a
-  -> m Unit
-parTraverse_ f = sequential <<< traverse_ (parallel <<< f)
+instance monadParExceptT :: Parallel f m => Parallel (Compose f (Either e)) (ExceptT e m) where
+  parallel (ExceptT ma) = Compose (parallel ma)
+  sequential (Compose fa) = ExceptT (sequential fa)
 
--- | Traverse a collection in parallel.
-parTraverse
-  :: forall f m t a b
-   . (MonadPar f m, Traversable t)
-  => (a -> m b)
-  -> t a
-  -> m (t b)
-parTraverse f = sequential <<< traverse (parallel <<< f)
+instance monadParReaderT :: Parallel f m => Parallel (ReaderT e f) (ReaderT e m) where
+  parallel = mapReaderT parallel
+  sequential = mapReaderT sequential
 
--- | The `Parallel` type constructor provides an `Applicative` instance
+instance monadParWriterT :: (Monoid w, Parallel f m) => Parallel (WriterT w f) (WriterT w m) where
+  parallel = mapWriterT parallel
+  sequential = mapWriterT sequential
+
+instance monadParMaybeT :: Parallel f m => Parallel (Compose f Maybe) (MaybeT m) where
+  parallel (MaybeT ma) = Compose (parallel ma)
+  sequential (Compose fa) = MaybeT (sequential fa)
+
+-- | The `ParCont` type constructor provides an `Applicative` instance
 -- | based on `ContT Unit m`, which waits for multiple continuations to be
 -- | resumed simultaneously.
 -- |
--- | Parallel sections of code can be embedded in sequential code by using
+-- | ParCont sections of code can be embedded in sequential code by using
 -- | the `parallel` and `sequential` functions:
 -- |
 -- | ```purescript
@@ -66,13 +64,15 @@ parTraverse f = sequential <<< traverse (parallel <<< f)
 -- |     Model <$> parallel (get "/products/popular/" token)
 -- |           <*> parallel (get "/categories/all" token)
 -- | ```
-newtype Parallel m a = Parallel (ContT Unit m a)
+newtype ParCont m a = ParCont (ContT Unit m a)
 
-instance functorParallel :: MonadEff eff m => Functor (Parallel m) where
+derive instance newtypeParCont :: Newtype (ParCont m a) _
+
+instance functorParCont :: MonadEff eff m => Functor (ParCont m) where
   map f = parallel <<< map f <<< sequential
 
-instance applyParallel :: MonadEff eff m => Apply (Parallel m) where
-  apply (Parallel ca) (Parallel cb) = Parallel $ ContT \k -> do
+instance applyParCont :: MonadEff eff m => Apply (ParCont m) where
+  apply (ParCont ca) (ParCont cb) = ParCont $ ContT \k -> do
     ra <- liftEff $ unsafeWithRef (newRef Nothing)
     rb <- liftEff $ unsafeWithRef (newRef Nothing)
 
@@ -88,11 +88,11 @@ instance applyParallel :: MonadEff eff m => Apply (Parallel m) where
         Nothing -> liftEff $ unsafeWithRef (writeRef rb (Just b))
         Just a -> k (a b)
 
-instance applicativeParallel :: MonadEff eff m => Applicative (Parallel m) where
+instance applicativeParCont :: MonadEff eff m => Applicative (ParCont m) where
   pure = parallel <<< pure
 
-instance altParallel :: MonadEff eff m => Alt (Parallel m) where
-  alt (Parallel c1) (Parallel c2) = Parallel $ ContT \k -> do
+instance altParCont :: MonadEff eff m => Alt (ParCont m) where
+  alt (ParCont c1) (ParCont c2) = ParCont $ ContT \k -> do
     done <- liftEff $ unsafeWithRef (newRef false)
 
     runContT c1 \a -> do
@@ -111,30 +111,14 @@ instance altParallel :: MonadEff eff m => Alt (Parallel m) where
           liftEff $ unsafeWithRef (writeRef done true)
           k a
 
-instance plusParallel :: MonadEff eff m => Plus (Parallel m) where
-  empty = Parallel $ ContT \_ -> pure unit
+instance plusParCont :: MonadEff eff m => Plus (ParCont m) where
+  empty = ParCont $ ContT \_ -> pure unit
 
-instance alternativeParallel :: MonadEff eff m => Alternative (Parallel m)
+instance alternativeParCont :: MonadEff eff m => Alternative (ParCont m)
 
-instance monadParParallel :: MonadEff eff m => MonadPar (Parallel m) (ContT Unit m) where
-  parallel = Parallel
-  sequential (Parallel ma) = ma
-
-instance monadParExceptT :: MonadPar f m => MonadPar (Compose f (Either e)) (ExceptT e m) where
-  parallel (ExceptT ma) = Compose (parallel ma)
-  sequential (Compose fa) = ExceptT (sequential fa)
-
-instance monadParReaderT :: MonadPar f m => MonadPar (ReaderT e f) (ReaderT e m) where
-  parallel = mapReaderT parallel
-  sequential = mapReaderT sequential
-
-instance monadParWriterT :: (Monoid w, MonadPar f m) => MonadPar (WriterT w f) (WriterT w m) where
-  parallel = mapWriterT parallel
-  sequential = mapWriterT sequential
-
-instance monadParMaybeT :: MonadPar f m => MonadPar (Compose f Maybe) (MaybeT m) where
-  parallel (MaybeT ma) = Compose (parallel ma)
-  sequential (Compose fa) = MaybeT (sequential fa)
+instance monadParParCont :: MonadEff eff m => Parallel (ParCont m) (ContT Unit m) where
+  parallel = ParCont
+  sequential (ParCont ma) = ma
 
 unsafeWithRef :: forall eff a. Eff (ref :: REF | eff) a -> Eff eff a
 unsafeWithRef = unsafeCoerceEff
