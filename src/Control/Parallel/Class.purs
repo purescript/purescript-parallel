@@ -91,7 +91,8 @@ parTraverse
 parTraverse f = runParallel <<< traverse (Parallel <<< f)
 
 -- | The `MonadRace` class extends `MonadPar` to those monads which can be
--- | _raced_. That is, monads for which two computations can be
+-- | _raced_. That is, monads for which two computations can be executed in parallel
+-- | returning the result from the computation which finishes first.
 -- |
 -- | The `stall` and `race` functions should satisfy the `Alternative` laws.
 class MonadPar m <= MonadRace m where
