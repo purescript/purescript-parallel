@@ -5,7 +5,7 @@ import Prelude (Unit, (<<<))
 import Control.Monad.Cont.Trans (ContT(..), runContT)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, logShow)
-import Control.Parallel.Class (parTraverse)
+import Control.Parallel (parTraverse)
 
 newtype Request = Request
   { host :: String

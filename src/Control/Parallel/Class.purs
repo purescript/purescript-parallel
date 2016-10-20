@@ -1,188 +1,124 @@
 module Control.Parallel.Class
-  ( class MonadPar
-  , par
-  , parTraverse_
-  , parTraverse
-  , class MonadRace
-  , stall
-  , race
-  , Parallel
+  ( class Parallel
   , parallel
-  , runParallel
+  , sequential
+  , ParCont(..)
   ) where
 
 import Prelude
 
 import Control.Alt (class Alt)
 import Control.Alternative (class Alternative)
-import Control.Apply (lift2)
 import Control.Monad.Cont.Trans (ContT(..), runContT)
 import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Ref (REF, writeRef, readRef, newRef)
-import Control.Monad.Eff.Unsafe (unsafeInterleaveEff)
+import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 import Control.Monad.Except.Trans (ExceptT(..))
-import Control.Monad.Reader.Trans (ReaderT(..))
 import Control.Monad.Maybe.Trans (MaybeT(..))
-import Control.Monad.Writer.Trans (WriterT(..))
+import Control.Monad.Reader.Trans (mapReaderT, ReaderT)
+import Control.Monad.Writer.Trans (mapWriterT, WriterT)
+import Control.Parallel.Class (class Parallel, parallel, sequential)
 import Control.Plus (class Plus)
 
-import Data.Foldable (class Foldable, traverse_)
+import Data.Either (Either)
+import Data.Functor.Compose (Compose(..))
 import Data.Maybe (Maybe(..))
 import Data.Monoid (class Monoid)
-import Data.Traversable (class Traversable, traverse)
-import Data.Tuple (Tuple(..))
+import Data.Newtype (class Newtype)
 
--- | The `MonadPar` class abstracts over monads which support some notion of
--- | parallel composition.
+-- | The `Parallel` class abstracts over monads which support
+-- | parallel composition via some related `Applicative`.
+class (Monad m, Applicative f) <= Parallel f m | m -> f, f -> m where
+  parallel   :: m ~> f
+  sequential :: f ~> m
+
+instance monadParExceptT :: Parallel f m => Parallel (Compose f (Either e)) (ExceptT e m) where
+  parallel (ExceptT ma) = Compose (parallel ma)
+  sequential (Compose fa) = ExceptT (sequential fa)
+
+instance monadParReaderT :: Parallel f m => Parallel (ReaderT e f) (ReaderT e m) where
+  parallel = mapReaderT parallel
+  sequential = mapReaderT sequential
+
+instance monadParWriterT :: (Monoid w, Parallel f m) => Parallel (WriterT w f) (WriterT w m) where
+  parallel = mapWriterT parallel
+  sequential = mapWriterT sequential
+
+instance monadParMaybeT :: Parallel f m => Parallel (Compose f Maybe) (MaybeT m) where
+  parallel (MaybeT ma) = Compose (parallel ma)
+  sequential (Compose fa) = MaybeT (sequential fa)
+
+-- | The `ParCont` type constructor provides an `Applicative` instance
+-- | based on `ContT Unit m`, which waits for multiple continuations to be
+-- | resumed simultaneously.
 -- |
--- | The `unit` and `par` functions should correspond to `pure` and `lift2` for
--- | some valid `Applicative` instance, but that instance need not arise from
--- | the underlying `Monad`.
-class Monad m <= MonadPar m where
-  par :: forall a b c. (a -> b -> c) -> m a -> m b -> m c
-
-instance monadParContT :: MonadPar (ContT Unit (Eff eff)) where
-  par f ca cb = ContT \k -> do
-    ra <- unsafeWithRef (newRef Nothing)
-    rb <- unsafeWithRef (newRef Nothing)
-
-    runContT ca \a -> do
-      mb <- unsafeWithRef (readRef rb)
-      case mb of
-        Nothing -> unsafeWithRef (writeRef ra (Just a))
-        Just b -> k (f a b)
-
-    runContT cb \b -> do
-      ma <- unsafeWithRef (readRef ra)
-      case ma of
-        Nothing -> unsafeWithRef (writeRef rb (Just b))
-        Just a -> k (f a b)
-
-instance monadParExceptT :: MonadPar m => MonadPar (ExceptT e m) where
-  par f (ExceptT e1) (ExceptT e2) = ExceptT (par (lift2 f) e1 e2)
-
-instance monadParMaybeT :: MonadPar m => MonadPar (MaybeT m) where
-  par f (MaybeT m1) (MaybeT m2) = MaybeT (par (lift2 f) m1 m2)
-
-instance monadParReaderT :: MonadPar m => MonadPar (ReaderT e m) where
-  par f (ReaderT r1) (ReaderT r2) = ReaderT \r -> par f (r1 r) (r2 r)
-
-instance monadParWriterT :: (Monoid w, MonadPar m) => MonadPar (WriterT w m) where
-  par f (WriterT w1) (WriterT w2) =
-    WriterT $
-      par (\(Tuple a wa) (Tuple b wb) → Tuple (f a b) (wa <> wb)) w1 w2
-
--- | Traverse a collection in parallel, discarding any results.
-parTraverse_
-  :: forall m t a b
-   . (MonadPar m, Foldable t)
-  => (a -> m b)
-  -> t a
-  -> m Unit
-parTraverse_ f = runParallel <<< traverse_ (Parallel <<< f)
-
--- | Traverse a collection in parallel.
-parTraverse
-  :: forall m t a b
-   . (MonadPar m, Traversable t)
-  => (a -> m b)
-  -> t a
-  -> m (t b)
-parTraverse f = runParallel <<< traverse (Parallel <<< f)
-
--- | The `MonadRace` class extends `MonadPar` to those monads which can be
--- | _raced_. That is, monads for which two computations can be
--- |
--- | The `stall` and `race` functions should satisfy the `Alternative` laws.
-class MonadPar m <= MonadRace m where
-  stall :: forall a. m a
-  race :: forall a. m a -> m a -> m a
-
-unsafeWithRef :: forall eff a. Eff (ref :: REF | eff) a -> Eff eff a
-unsafeWithRef = unsafeInterleaveEff
-
-instance monadRaceContT :: MonadRace (ContT Unit (Eff eff)) where
-  stall = ContT \_ -> pure unit
-  race c1 c2 = ContT \k -> do
-    done <- unsafeWithRef (newRef false)
-
-    runContT c1 \a -> do
-      b <- unsafeWithRef (readRef done)
-      if b
-        then pure unit
-        else do
-          unsafeWithRef (writeRef done true)
-          k a
-
-    runContT c2 \a -> do
-      b <- unsafeWithRef (readRef done)
-      if b
-        then pure unit
-        else do
-          unsafeWithRef (writeRef done true)
-          k a
-
-instance monadRaceExceptT :: MonadRace m => MonadRace (ExceptT e m) where
-  stall = ExceptT stall
-  race (ExceptT e1) (ExceptT e2) = ExceptT (race e1 e2)
-
-instance monadRaceMaybeT :: MonadRace m => MonadRace (MaybeT m) where
-  stall = MaybeT stall
-  race (MaybeT m1) (MaybeT m2) = MaybeT (race m1 m2)
-
-instance monadRaceReaderT :: MonadRace m => MonadRace (ReaderT e m) where
-  stall = ReaderT \_ -> stall
-  race (ReaderT r1) (ReaderT r2) = ReaderT \r -> race (r1 r) (r2 r)
-
-instance monadRaceWriterT :: (Monoid w, MonadRace m) => MonadRace (WriterT w m) where
-  stall = WriterT stall
-  race (WriterT w1) (WriterT w2) = WriterT (race w1 w2)
-
--- | The `Parallel` type constructor provides `Applicative` and `Alternative`
--- | instances for any type monad with `MonadPar` and `MonadRace` instances
--- | respectively.
--- |
--- | - The definition of `apply` from `Apply` runs two computations in parallel and applies
--- |   a function when both complete.
--- | - The definition of `alt` from the `Alt` type class runs two computations in parallel
--- |   and returns the result of the computation which completes first.
--- |
--- | Parallel sections of code can be embedded in sequential code by using
--- | the `parallel` and `runParallel` functions:
+-- | ParCont sections of code can be embedded in sequential code by using
+-- | the `parallel` and `sequential` functions:
 -- |
 -- | ```purescript
 -- | loadModel :: ContT Unit (Eff (ajax :: AJAX)) Model
 -- | loadModel = do
 -- |   token <- authenticate
--- |   runParallel $
+-- |   sequential $
 -- |     Model <$> parallel (get "/products/popular/" token)
 -- |           <*> parallel (get "/categories/all" token)
 -- | ```
-newtype Parallel m a = Parallel (m a)
+newtype ParCont m a = ParCont (ContT Unit m a)
 
--- | Lift a computation to be run in parallel from a computation in the
--- | corresponding `Monad`.
-parallel :: forall m a. m a -> Parallel m a
-parallel = Parallel
+derive instance newtypeParCont :: Newtype (ParCont m a) _
 
--- | Lower a parallel computation to the underlying `Monad`, so that it may be
--- | used in a larger sequential computation.
-runParallel :: forall m a. Parallel m a -> m a
-runParallel (Parallel ma) = ma
+instance functorParCont :: MonadEff eff m => Functor (ParCont m) where
+  map f = parallel <<< map f <<< sequential
 
-instance functorParallel :: Functor m => Functor (Parallel m) where
-  map f = parallel <<< map f <<< runParallel
+instance applyParCont :: MonadEff eff m => Apply (ParCont m) where
+  apply (ParCont ca) (ParCont cb) = ParCont $ ContT \k -> do
+    ra <- liftEff $ unsafeWithRef (newRef Nothing)
+    rb <- liftEff $ unsafeWithRef (newRef Nothing)
 
-instance applyParallel :: MonadPar m => Apply (Parallel m) where
-  apply f a = parallel (par ($) (runParallel f) (runParallel a))
+    runContT ca \a -> do
+      mb <- liftEff $ unsafeWithRef (readRef rb)
+      case mb of
+        Nothing -> liftEff $ unsafeWithRef (writeRef ra (Just a))
+        Just b -> k (a b)
 
-instance applicativeParallel :: MonadPar m => Applicative (Parallel m) where
+    runContT cb \b -> do
+      ma <- liftEff $ unsafeWithRef (readRef ra)
+      case ma of
+        Nothing -> liftEff $ unsafeWithRef (writeRef rb (Just b))
+        Just a -> k (a b)
+
+instance applicativeParCont :: MonadEff eff m => Applicative (ParCont m) where
   pure = parallel <<< pure
 
-instance altParallel :: MonadRace m => Alt (Parallel m) where
-  alt a b = parallel (runParallel a `race` runParallel b)
+instance altParCont :: MonadEff eff m => Alt (ParCont m) where
+  alt (ParCont c1) (ParCont c2) = ParCont $ ContT \k -> do
+    done <- liftEff $ unsafeWithRef (newRef false)
 
-instance plusParallel :: MonadRace m => Plus (Parallel m) where
-  empty = parallel stall
+    runContT c1 \a -> do
+      b <- liftEff $ unsafeWithRef (readRef done)
+      if b
+        then pure unit
+        else do
+          liftEff $ unsafeWithRef (writeRef done true)
+          k a
 
-instance alternativeParallel :: MonadRace m => Alternative (Parallel m)
+    runContT c2 \a -> do
+      b <- liftEff $ unsafeWithRef (readRef done)
+      if b
+        then pure unit
+        else do
+          liftEff $ unsafeWithRef (writeRef done true)
+          k a
+
+instance plusParCont :: MonadEff eff m => Plus (ParCont m) where
+  empty = ParCont $ ContT \_ -> pure unit
+
+instance alternativeParCont :: MonadEff eff m => Alternative (ParCont m)
+
+instance monadParParCont :: MonadEff eff m => Parallel (ParCont m) (ContT Unit m) where
+  parallel = ParCont
+  sequential (ParCont ma) = ma
+
+unsafeWithRef :: forall eff a. Eff (ref :: REF | eff) a -> Eff eff a
+unsafeWithRef = unsafeCoerceEff
