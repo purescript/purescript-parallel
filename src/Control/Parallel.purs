@@ -1,6 +1,8 @@
 module Control.Parallel
   ( parTraverse
   , parTraverse_
+  , parSequence
+  , parSequence_
   , module Control.Parallel.Class
   ) where
 
@@ -28,3 +30,17 @@ parTraverse_
   -> t a
   -> m Unit
 parTraverse_ f = sequential <<< traverse_ (parallel <<< f)
+
+parSequence
+  :: forall a t m f
+   . (Parallel f m, Traversable t)
+  => t (m a)
+  -> m (t a)
+parSequence = parTraverse id
+
+parSequence_
+  :: forall a t m f
+   . (Parallel f m, Traversable t)
+  => t (m a)
+  -> m Unit
+parSequence_ = parTraverse_ id
