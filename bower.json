@@ -16,12 +16,12 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-transformers": "^2.0.0",
-    "purescript-refs": "^2.0.0",
-    "purescript-functors": "^1.0.0"
+    "purescript-transformers": "^3.0.0",
+    "purescript-refs": "^3.0.0",
+    "purescript-functors": "^2.0.0"
   },
   "devDependencies": {
-    "purescript-console": "^2.0.0",
-    "purescript-functions": "^2.0.0"
+    "purescript-console": "^3.0.0",
+    "purescript-functions": "^3.0.0"
   }
 }

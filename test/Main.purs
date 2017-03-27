@@ -3,7 +3,7 @@ module Test.Main where
 import Prelude (Unit, (<<<))
 
 import Control.Monad.Cont.Trans (ContT(..), runContT)
-import Control.Monad.Eff (Eff)
+import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.Console (CONSOLE, logShow)
 import Control.Parallel (parTraverse)
 
@@ -12,7 +12,7 @@ newtype Request = Request
   , path :: String
   }
 
-foreign import data HTTP :: !
+foreign import data HTTP :: Effect
 
 foreign import getImpl
   :: forall eff
