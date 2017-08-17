@@ -9,10 +9,10 @@ module Control.Parallel
 
 import Prelude
 
+import Control.Alternative (class Alternative, empty, alt)
 import Control.Parallel.Class (class Parallel, parallel, sequential, ParCont(..))
-import Control.Plus (class Plus)
 
-import Data.Foldable (class Foldable, traverse_, oneOf)
+import Data.Foldable (class Foldable, traverse_, oneOf, foldr)
 import Data.Traversable (class Traversable, traverse)
 
 -- | Traverse a collection in parallel.
@@ -51,12 +51,25 @@ parSequence_
   -> m Unit
 parSequence_ = parTraverse_ id
 
+-- | Race a collection in parallel.
 parOneOf
   :: forall a t m f
    . Parallel f m
-  => Plus f
+  => Alternative f
   => Foldable t
   => Functor t
   => t (m a)
   -> m a
 parOneOf = sequential <<< oneOf <<< map parallel
+
+-- | Race a collection in parallel while mapping to some effect.
+parOneOfMap
+  :: forall a b t m f
+   . Parallel f m
+  => Alternative f
+  => Foldable t
+  => Functor t
+  => (a -> m b)
+  -> t a
+  -> m b
+parOneOfMap f = sequential <<< foldr (alt <<< parallel <<< f) empty
