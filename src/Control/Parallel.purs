@@ -3,14 +3,16 @@ module Control.Parallel
   , parTraverse_
   , parSequence
   , parSequence_
+  , parOneOf
   , module Control.Parallel.Class
   ) where
 
 import Prelude
 
 import Control.Parallel.Class (class Parallel, parallel, sequential, ParCont(..))
+import Control.Plus (class Plus)
 
-import Data.Foldable (class Foldable, traverse_)
+import Data.Foldable (class Foldable, traverse_, oneOf)
 import Data.Traversable (class Traversable, traverse)
 
 -- | Traverse a collection in parallel.
@@ -48,3 +50,13 @@ parSequence_
   => t (m a)
   -> m Unit
 parSequence_ = parTraverse_ id
+
+parOneOf
+  :: forall a t m f
+   . Parallel f m
+  => Plus f
+  => Foldable t
+  => Functor t
+  => t (m a)
+  -> m a
+parOneOf = sequential <<< oneOf <<< map parallel
