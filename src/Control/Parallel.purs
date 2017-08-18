@@ -12,7 +12,7 @@ import Prelude
 import Control.Alternative (class Alternative)
 import Control.Parallel.Class (class Parallel, parallel, sequential, ParCont(..))
 
-import Data.Foldable (class Foldable, traverse_, oneOf, oneOfMap)
+import Data.Foldable (class Foldable, traverse_, oneOfMap)
 import Data.Traversable (class Traversable, traverse)
 
 -- | Traverse a collection in parallel.
@@ -60,7 +60,7 @@ parOneOf
   => Functor t
   => t (m a)
   -> m a
-parOneOf = sequential <<< oneOf <<< map parallel
+parOneOf = sequential <<< oneOfMap parallel
 
 -- | Race a collection in parallel while mapping to some effect.
 parOneOfMap
