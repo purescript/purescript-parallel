@@ -4,6 +4,7 @@ module Control.Parallel
   , parSequence
   , parSequence_
   , parOneOf
+  , parOneOfMap
   , module Control.Parallel.Class
   ) where
 
