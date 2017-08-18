@@ -18,7 +18,8 @@
   "dependencies": {
     "purescript-transformers": "^3.0.0",
     "purescript-refs": "^3.0.0",
-    "purescript-functors": "^2.0.0"
+    "purescript-functors": "^2.0.0",
+    "purescript-foldable-traversable": "^3.6.0"
   },
   "devDependencies": {
     "purescript-console": "^3.0.0",
