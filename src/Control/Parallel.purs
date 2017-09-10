@@ -5,6 +5,7 @@ module Control.Parallel
   , parSequence_
   , parOneOf
   , parOneOfMap
+  , parApply
   , module Control.Parallel.Class
   ) where
 
@@ -15,6 +16,16 @@ import Control.Parallel.Class (class Parallel, parallel, sequential, ParCont(..)
 
 import Data.Foldable (class Foldable, traverse_, oneOfMap)
 import Data.Traversable (class Traversable, traverse)
+
+-- | Apply a function to an arguement under a type constructor in parallel.
+parApply
+  :: forall f m a b
+   . Parallel f m
+   => m (a -> b)
+   -> m a
+   -> m b
+parApply mf ma = sequential(apply (parallel mf) (parallel ma))
+
 
 -- | Traverse a collection in parallel.
 parTraverse
