@@ -6,7 +6,6 @@ module Control.Parallel
   , parOneOf
   , parOneOfMap
   , parApply
-  , (<!>)
   , module Control.Parallel.Class
   ) where
 
@@ -27,7 +26,6 @@ parApply
    -> m b
 parApply mf ma = sequential(apply (parallel mf) (parallel ma))
 
-infixl 4 apply as <!>
 
 -- | Traverse a collection in parallel.
 parTraverse
