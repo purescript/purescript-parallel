@@ -21,7 +21,8 @@ import Control.Monad.Writer.Trans (mapWriterT, WriterT)
 import Control.Parallel.Class (class Parallel, parallel, sequential)
 import Control.Plus (class Plus)
 
-import Data.Either (Either)
+import Data.Either (Either(..), either)
+import Data.Validation.Semigroup(V, invalid, unV)
 import Data.Functor.Compose (Compose(..))
 import Data.Maybe (Maybe(..))
 import Data.Monoid (class Monoid)
@@ -48,6 +49,10 @@ instance monadParWriterT :: (Monoid w, Parallel f m) => Parallel (WriterT w f) (
 instance monadParMaybeT :: Parallel f m => Parallel (Compose f Maybe) (MaybeT m) where
   parallel (MaybeT ma) = Compose (parallel ma)
   sequential (Compose fa) = MaybeT (sequential fa)
+
+instance parallelEitherV :: Semigroup e => Parallel (V e) (Either e) where
+  sequential = unV Left Right
+  parallel = either invalid pure
 
 -- | The `ParCont` type constructor provides an `Applicative` instance
 -- | based on `ContT Unit m`, which waits for multiple continuations to be
