@@ -18,7 +18,6 @@ import Control.Monad.Except.Trans (ExceptT(..))
 import Control.Monad.Maybe.Trans (MaybeT(..))
 import Control.Monad.Reader.Trans (mapReaderT, ReaderT)
 import Control.Monad.Writer.Trans (mapWriterT, WriterT)
-import Control.Parallel.Class (class Parallel, parallel, sequential)
 import Control.Plus (class Plus)
 
 import Data.Either (Either)
