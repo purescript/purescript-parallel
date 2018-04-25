@@ -1,35 +1,26 @@
-module Control.Parallel.Class
-  ( class Parallel
-  , parallel
-  , sequential
-  , ParCont(..)
-  ) where
+module Control.Parallel.Class where
 
 import Prelude
 
 import Control.Alt (class Alt)
 import Control.Alternative (class Alternative)
 import Control.Monad.Cont.Trans (ContT(..), runContT)
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Class (class MonadEff, liftEff)
-import Control.Monad.Eff.Ref (REF, writeRef, readRef, newRef)
-import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 import Control.Monad.Except.Trans (ExceptT(..))
 import Control.Monad.Maybe.Trans (MaybeT(..))
 import Control.Monad.Reader.Trans (mapReaderT, ReaderT)
 import Control.Monad.Writer.Trans (mapWriterT, WriterT)
 import Control.Plus (class Plus)
-
 import Data.Either (Either)
 import Data.Functor.Compose (Compose(..))
 import Data.Maybe (Maybe(..))
-import Data.Monoid (class Monoid)
 import Data.Newtype (class Newtype)
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Ref as Ref
 
 -- | The `Parallel` class abstracts over monads which support
 -- | parallel composition via some related `Applicative`.
 class (Monad m, Applicative f) <= Parallel f m | m -> f, f -> m where
-  parallel   :: m ~> f
+  parallel :: m ~> f
   sequential :: f ~> m
 
 instance monadParExceptT :: Parallel f m => Parallel (Compose f (Either e)) (ExceptT e m) where
@@ -67,57 +58,54 @@ newtype ParCont m a = ParCont (ContT Unit m a)
 
 derive instance newtypeParCont :: Newtype (ParCont m a) _
 
-instance functorParCont :: MonadEff eff m => Functor (ParCont m) where
+instance functorParCont :: MonadEffect m => Functor (ParCont m) where
   map f = parallel <<< map f <<< sequential
 
-instance applyParCont :: MonadEff eff m => Apply (ParCont m) where
+instance applyParCont :: MonadEffect m => Apply (ParCont m) where
   apply (ParCont ca) (ParCont cb) = ParCont $ ContT \k -> do
-    ra <- liftEff $ unsafeWithRef (newRef Nothing)
-    rb <- liftEff $ unsafeWithRef (newRef Nothing)
+    ra <- liftEffect (Ref.new Nothing)
+    rb <- liftEffect (Ref.new Nothing)
 
     runContT ca \a -> do
-      mb <- liftEff $ unsafeWithRef (readRef rb)
+      mb <- liftEffect (Ref.read rb)
       case mb of
-        Nothing -> liftEff $ unsafeWithRef (writeRef ra (Just a))
+        Nothing -> liftEffect (Ref.write (Just a) ra)
         Just b -> k (a b)
 
     runContT cb \b -> do
-      ma <- liftEff $ unsafeWithRef (readRef ra)
+      ma <- liftEffect (Ref.read ra)
       case ma of
-        Nothing -> liftEff $ unsafeWithRef (writeRef rb (Just b))
+        Nothing -> liftEffect (Ref.write (Just b) rb)
         Just a -> k (a b)
 
-instance applicativeParCont :: MonadEff eff m => Applicative (ParCont m) where
+instance applicativeParCont :: MonadEffect m => Applicative (ParCont m) where
   pure = parallel <<< pure
 
-instance altParCont :: MonadEff eff m => Alt (ParCont m) where
+instance altParCont :: MonadEffect m => Alt (ParCont m) where
   alt (ParCont c1) (ParCont c2) = ParCont $ ContT \k -> do
-    done <- liftEff $ unsafeWithRef (newRef false)
+    done <- liftEffect (Ref.new false)
 
     runContT c1 \a -> do
-      b <- liftEff $ unsafeWithRef (readRef done)
+      b <- liftEffect (Ref.read done)
       if b
         then pure unit
         else do
-          liftEff $ unsafeWithRef (writeRef done true)
+          liftEffect (Ref.write true done)
           k a
 
     runContT c2 \a -> do
-      b <- liftEff $ unsafeWithRef (readRef done)
+      b <- liftEffect (Ref.read done)
       if b
         then pure unit
         else do
-          liftEff $ unsafeWithRef (writeRef done true)
+          liftEffect (Ref.write true done)
           k a
 
-instance plusParCont :: MonadEff eff m => Plus (ParCont m) where
+instance plusParCont :: MonadEffect m => Plus (ParCont m) where
   empty = ParCont $ ContT \_ -> pure unit
 
-instance alternativeParCont :: MonadEff eff m => Alternative (ParCont m)
+instance alternativeParCont :: MonadEffect m => Alternative (ParCont m)
 
-instance monadParParCont :: MonadEff eff m => Parallel (ParCont m) (ContT Unit m) where
+instance monadParParCont :: MonadEffect m => Parallel (ParCont m) (ContT Unit m) where
   parallel = ParCont
   sequential (ParCont ma) = ma
-
-unsafeWithRef :: forall eff a. Eff (ref :: REF | eff) a -> Eff eff a
-unsafeWithRef = unsafeCoerceEff

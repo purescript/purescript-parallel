@@ -1,32 +1,26 @@
 module Test.Main where
 
-import Prelude (Unit, (<<<))
+import Prelude
 
 import Control.Monad.Cont.Trans (ContT(..), runContT)
-import Control.Monad.Eff (Eff, kind Effect)
-import Control.Monad.Eff.Console (CONSOLE, logShow)
 import Control.Parallel (parTraverse)
+import Effect (Effect)
+import Effect.Console (logShow)
 
 newtype Request = Request
   { host :: String
   , path :: String
   }
 
-foreign import data HTTP :: Effect
+foreign import getImpl :: Request -> (String -> Effect Unit) -> Effect Unit
 
-foreign import getImpl
-  :: forall eff
-   . Request
-  -> (String -> Eff (http :: HTTP | eff) Unit)
-  -> Eff (http :: HTTP | eff) Unit
-
-get :: forall eff. Request -> ContT Unit (Eff (http :: HTTP | eff)) String
+get :: Request -> ContT Unit Effect String
 get req = ContT (getImpl req)
 
 request :: String -> Request
 request host = Request { host: host, path: "/" }
 
-main :: forall eff. Eff (http :: HTTP, console :: CONSOLE | eff) Unit
+main :: Effect Unit
 main = runContT (parTraverse (get <<< request) resources) logShow
   where
     resources :: Array String

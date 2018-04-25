@@ -16,13 +16,13 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-transformers": "^3.0.0",
-    "purescript-refs": "^3.0.0",
-    "purescript-functors": "^2.0.0",
-    "purescript-foldable-traversable": "^3.6.0"
+    "purescript-transformers": "#compiler/0.12",
+    "purescript-refs": "#compiler/0.12",
+    "purescript-functors": "#compiler/0.12",
+    "purescript-foldable-traversable": "#compiler/0.12"
   },
   "devDependencies": {
-    "purescript-console": "^3.0.0",
-    "purescript-functions": "^3.0.0"
+    "purescript-console": "#compiler/0.12",
+    "purescript-functions": "#compiler/0.12"
   }
 }
