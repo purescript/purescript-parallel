@@ -1,11 +1,11 @@
 module Control.Parallel
-  ( parTraverse
+  ( parApply
+  , parTraverse
   , parTraverse_
   , parSequence
   , parSequence_
   , parOneOf
   , parOneOfMap
-  , parApply
   , module Control.Parallel.Class
   ) where
 
@@ -25,7 +25,6 @@ parApply
    -> m a
    -> m b
 parApply mf ma = sequential(apply (parallel mf) (parallel ma))
-
 
 -- | Traverse a collection in parallel.
 parTraverse
@@ -53,7 +52,7 @@ parSequence
   => Traversable t
   => t (m a)
   -> m (t a)
-parSequence = parTraverse id
+parSequence = parTraverse identity
 
 parSequence_
   :: forall a t m f
@@ -61,7 +60,7 @@ parSequence_
   => Foldable t
   => t (m a)
   -> m Unit
-parSequence_ = parTraverse_ id
+parSequence_ = parTraverse_ identity
 
 -- | Race a collection in parallel.
 parOneOf

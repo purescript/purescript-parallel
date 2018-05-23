@@ -1,7 +1,6 @@
 {
   "name": "purescript-parallel",
-  "description": "Type classes for parallel computation",
-  "license": "MIT",
+  "license": "BSD-3-Clause",
   "repository": {
     "type": "git",
     "url": "git://github.com/purescript/purescript-parallel.git"
@@ -16,13 +15,19 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-transformers": "^3.0.0",
-    "purescript-refs": "^3.0.0",
-    "purescript-functors": "^2.0.0",
-    "purescript-foldable-traversable": "^3.6.0"
+    "purescript-control": "^4.0.0",
+    "purescript-effect": "^2.0.0",
+    "purescript-either": "^4.0.0",
+    "purescript-foldable-traversable": "^4.0.0",
+    "purescript-functors": "^3.0.0",
+    "purescript-maybe": "^4.0.0",
+    "purescript-newtype": "^3.0.0",
+    "purescript-prelude": "^4.0.0",
+    "purescript-refs": "^4.0.0",
+    "purescript-transformers": "^4.0.0"
   },
   "devDependencies": {
-    "purescript-console": "^3.0.0",
-    "purescript-functions": "^3.0.0"
+    "purescript-console": "^4.0.0",
+    "purescript-functions": "^4.0.0"
   }
 }
