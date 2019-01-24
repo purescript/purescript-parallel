@@ -24,7 +24,8 @@
     "purescript-newtype": "^3.0.0",
     "purescript-prelude": "^4.0.0",
     "purescript-refs": "^4.0.0",
-    "purescript-transformers": "^4.0.0"
+    "purescript-transformers": "^4.0.0",
+    "purescript-validation": "^4.1.0"
   },
   "devDependencies": {
     "purescript-console": "^4.0.0",

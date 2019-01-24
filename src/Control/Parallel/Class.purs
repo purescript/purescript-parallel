@@ -10,10 +10,11 @@ import Control.Monad.Maybe.Trans (MaybeT(..))
 import Control.Monad.Reader.Trans (mapReaderT, ReaderT)
 import Control.Monad.Writer.Trans (mapWriterT, WriterT)
 import Control.Plus (class Plus)
-import Data.Either (Either)
+import Data.Either (Either, either)
 import Data.Functor.Compose (Compose(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
+import Data.Validation.Semigroup (V, invalid, toEither)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 
@@ -109,3 +110,7 @@ instance alternativeParCont :: MonadEffect m => Alternative (ParCont m)
 instance monadParParCont :: MonadEffect m => Parallel (ParCont m) (ContT Unit m) where
   parallel = ParCont
   sequential (ParCont ma) = ma
+
+instance pararllelSGVEither :: Semigroup err => Parallel (V err) (Either err) where
+  parallel = either invalid pure
+  sequential = toEither
