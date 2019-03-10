@@ -14,6 +14,7 @@ import Data.Either (Either)
 import Data.Functor.Compose (Compose(..))
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
+import Data.Profunctor.Costar (Costar(..))
 import Data.Profunctor.Star (Star(..))
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
@@ -43,6 +44,11 @@ instance monadParMaybeT :: Parallel f m => Parallel (Compose f Maybe) (MaybeT m)
 instance monadParStar :: Parallel f m => Parallel (Star f a) (Star m a) where
   parallel (Star f) = (Star $ parallel <<< f)
   sequential (Star f) = (Star $ sequential <<< f)
+
+instance monadParCostar :: Parallel f m => Parallel (Costar f a) (Costar m a) where
+  parallel (Costar f) = (Costar $ sequential >>> f)
+  sequential (Costar f) = (Costar $ parallel >>> f)
+
 
 -- | The `ParCont` type constructor provides an `Applicative` instance
 -- | based on `ContT Unit m`, which waits for multiple continuations to be
