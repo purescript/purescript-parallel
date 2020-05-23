@@ -62,5 +62,5 @@ main =
       void $ parOneOf [ arrayComputation 1
                       , arrayComputation 2
                       , arrayComputation 3
-                      , arrayComputation 3
+                      , arrayComputation 4
                       ]
