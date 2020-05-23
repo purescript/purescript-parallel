@@ -53,14 +53,14 @@ main =
     runComputation "race multiple computations & stop all others when one finishes" do
       let
         -- same as before
-        arrayComputation index strArray = do
+        arrayComputation index = do
           let shownIndex = "Array " <> show index <> ": "
-          strArray # traverse \element -> do
+          array # traverse \element -> do
             delayComputationWithRandomAmount
             liftEffect $ log $ shownIndex <> element
 
-      void $ parOneOf [ arrayComputation 1 array
-                      , arrayComputation 2 array
-                      , arrayComputation 3 array
-                      , arrayComputation 3 array
+      void $ parOneOf [ arrayComputation 1
+                      , arrayComputation 2
+                      , arrayComputation 3
+                      , arrayComputation 3
                       ]
