@@ -32,7 +32,7 @@ main =
       for_ array \element -> do
         liftEffect $ log element
 
-    let delayComputationWithRandomAount = do
+    let delayComputationWithRandomAmount = do
           delayAmount <- liftEffect $ randomInt 20 1000
           delay $ Milliseconds $ toNumber delayAmount
 
@@ -41,13 +41,13 @@ main =
         -- slow down speed of computation based on some random value
         -- to show that things are working in parallel.
         parallel do
-          delayComputationWithRandomAount
+          delayComputationWithRandomAmount
           liftEffect $ log element
 
     -- same computation as before but with less boilerplate.
     runComputation "print all items in array in parallel using parTraverse" do
       array # parTraverse_ \element -> do
-        delayComputationWithRandomAount
+        delayComputationWithRandomAmount
         liftEffect $ log element
 
     runComputation "race multiple computations & stop all others when one finishes" do
@@ -56,7 +56,7 @@ main =
         arrayComputation index strArray = do
           let shownIndex = "Array " <> show index <> ": "
           strArray # traverse \element -> do
-            delayComputationWithRandomAount
+            delayComputationWithRandomAmount
             liftEffect $ log $ shownIndex <> element
 
       void $ parOneOf [ arrayComputation 1 array
