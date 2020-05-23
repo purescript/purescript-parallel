@@ -16,10 +16,8 @@ import Effect.Console (log)
 import Effect.Random (randomInt)
 
 -- Create an array from 1 to 99 as Strings.
--- Same as `map show $ range 1 99` but more performant due to not needing to
--- iterate through the outputted array from `range`.
 array :: Array String
-array = unfoldr (\i -> if i < 10 then Just (Tuple (show i) (i + 1)) else Nothing) 1
+array = map show $ range 1 99
 
 main :: Effect Unit
 main =
