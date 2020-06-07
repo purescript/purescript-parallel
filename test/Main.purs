@@ -27,5 +27,5 @@ main = runContT (parTraverse (get <<< request) resources) logShow
     resources =
       [ "www.purescript.org"
       , "try.purescript.org"
-      , "community.purescript.org"
+      , "discourse.purescript.org"
       ]
