@@ -17,7 +17,7 @@ import Control.Parallel.Class (class Parallel, parallel, sequential, ParCont(..)
 import Data.Foldable (class Foldable, traverse_, oneOfMap)
 import Data.Traversable (class Traversable, traverse)
 
--- | Apply a function to an arguement under a type constructor in parallel.
+-- | Apply a function to an argument under a type constructor in parallel.
 parApply
   :: forall f m a b
    . Parallel f m
