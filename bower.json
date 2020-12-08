@@ -23,6 +23,7 @@
     "purescript-maybe": "master",
     "purescript-newtype": "master",
     "purescript-prelude": "master",
+    "purescript-profunctor": "master",
     "purescript-refs": "master",
     "purescript-transformers": "master"
   },
