@@ -5,32 +5,38 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes:
+- Added support for PureScript 0.14 and dropped support for all previous versions (#37)
 
 New features:
+- Added instances for `Star` and `Costar` (#28)
 
 Bugfixes:
+- Fixed documentation typo: arguement -> argument (#33)
 
 Other improvements:
+- Migrated CI to GitHub Actions and updated installation instructions to use Spago (#36)
+- Replaced dead URI in tests (#32)
+- Added a changelog and pull request template (#37)
 
 ## [v4.0.0](https://github.com/purescript/purescript-parallel/releases/tag/v4.0.0) - 2018-05-23
 
-Updated for PureScript 0.12
+- Updated for PureScript 0.12
 
 ## [v3.3.1](https://github.com/purescript/purescript-parallel/releases/tag/v3.3.1) - 2017-10-23
 
-Remove self-import in `Class` module (@paulyoung)
+- Removed self-import in `Class` module (@paulyoung)
 
 ## [v3.3.0](https://github.com/purescript/purescript-parallel/releases/tag/v3.3.0) - 2017-09-10
 
-Add `parApply` function (@LukaJCB)
+- Added `parApply` function (@LukaJCB)
 
 ## [v3.2.0](https://github.com/purescript/purescript-parallel/releases/tag/v3.2.0) - 2017-08-19
 
-Add `parOneOf` and `parOneOfMap` (@natefaubion)
+- Added `parOneOf` and `parOneOfMap` (@natefaubion)
 
 ## [v3.1.0](https://github.com/purescript/purescript-parallel/releases/tag/v3.1.0) - 2017-08-18
 
-Add `parOneOf` and `parOneOfMap` (@natefaubion)
+- Added `parOneOf` and `parOneOfMap` (@natefaubion)
 
 ## [v3.0.0](https://github.com/purescript/purescript-parallel/releases/tag/v3.0.0) - 2017-03-27
 
@@ -51,13 +57,7 @@ Add `parOneOf` and `parOneOfMap` (@natefaubion)
 
 ## [v1.0.0](https://github.com/purescript/purescript-parallel/releases/tag/v1.0.0) - 2016-06-06
 
-This release is intended for the PureScript 0.9.1 compiler and newer.
-
-**Note**: The v1.0.0 tag is not meant to indicate the library is “finished”, the core libraries are all being bumped to this for the 0.9 compiler release so as to use semver more correctly.
-
-## [v1.0.0-rc.1](https://github.com/purescript/purescript-parallel/releases/tag/v1.0.0-rc.1) - 2016-05-21
-
-- Release candidate for the upcoming PureScript 0.9 release
+- Updated for PureScript 0.9.1. **Note**: The v1.0.0 tag is not meant to indicate the library is “finished”, the core libraries are all being bumped to this for the 0.9 compiler release so as to use semver more correctly.
 
 ## [v0.5.1](https://github.com/purescript/purescript-parallel/releases/tag/v0.5.1) - 2015-09-19
 
@@ -69,21 +69,20 @@ This release is intended for the PureScript 0.9.1 compiler and newer.
 
 ## [v0.4.0](https://github.com/purescript/purescript-parallel/releases/tag/v0.4.0) - 2015-08-25
 
-Bump `transformers` dependency to `0.7.1`. As such, this release requires version `0.7.4` of the PureScript compiler.
+- Bumped `transformers` dependency to `0.7.1`. As such, this release requires version `0.7.4` of the PureScript compiler.
 
 ## [v0.3.0](https://github.com/purescript/purescript-parallel/releases/tag/v0.3.0) - 2015-06-30
 
-This release works with versions 0.7.\* of the PureScript compiler. It will not work with older versions. If you are using an older version, you should require an older, compatible version of this library.
+- Updated for PureScript 0.7.\*. It will not work with older versions. If you are using an older version, you should require an older, compatible version of this library.
 
 ## [v0.2.1](https://github.com/purescript/purescript-parallel/releases/tag/v0.2.1) - 2015-03-05
 
-Add some convenience functions.
+- Added some convenience functions.
 
 ## [v0.2.0](https://github.com/purescript/purescript-parallel/releases/tag/v0.2.0) - 2015-03-05
 
-
+- Hid `Parallel` constructor and added docs.
 
 ## [v0.1.0](https://github.com/purescript/purescript-parallel/releases/tag/v0.1.0) - 2014-11-26
 
-
-
+- Initial release
