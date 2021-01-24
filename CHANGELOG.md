@@ -15,7 +15,7 @@ Bugfixes:
 
 Other improvements:
 - Migrated CI to GitHub Actions and updated installation instructions to use Spago (#36)
-- Replaced dead URI in tests
+- Replaced dead URI in tests (#32)
 - Added a changelog and pull request template (#37)
 
 ## [v4.0.0](https://github.com/purescript/purescript-parallel/releases/tag/v4.0.0) - 2018-05-23
