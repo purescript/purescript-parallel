@@ -1,5 +1,3 @@
-"use strict";
-
 export function getImpl(opts) {
     return function(done) {
         return function() {
