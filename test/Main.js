@@ -1,9 +1,9 @@
-"use strict";
+import http from "http";
 
-exports.getImpl = function(opts) {
+export function getImpl(opts) {
     return function(done) {
         return function() {
-            require('http').request(opts, function(res) {
+            http.request(opts, function(res) {
                 var body = '';
                 res.setEncoding('utf8');
                 res.on('data', function (s) {
@@ -15,4 +15,4 @@ exports.getImpl = function(opts) {
             }).end();
         };
     };
-};
+}
