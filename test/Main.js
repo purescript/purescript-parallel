@@ -1,6 +1,6 @@
 "use strict";
 
-exports.getImpl = function(opts) {
+export function getImpl(opts) {
     return function(done) {
         return function() {
             require('http').request(opts, function(res) {
@@ -15,4 +15,4 @@ exports.getImpl = function(opts) {
             }).end();
         };
     };
-};
+}
