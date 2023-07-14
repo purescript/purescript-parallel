@@ -30,6 +30,7 @@ parApply mf ma = sequential(apply (parallel mf) (parallel ma))
 parTraverse
   :: forall f m t a b
    . Parallel f m
+  => Applicative f
   => Traversable t
   => (a -> m b)
   -> t a
@@ -40,6 +41,7 @@ parTraverse f = sequential <<< traverse (parallel <<< f)
 parTraverse_
   :: forall f m t a b
    . Parallel f m
+  => Applicative f
   => Foldable t
   => (a -> m b)
   -> t a
@@ -49,6 +51,7 @@ parTraverse_ f = sequential <<< traverse_ (parallel <<< f)
 parSequence
   :: forall a t m f
    . Parallel f m
+  => Applicative f
   => Traversable t
   => t (m a)
   -> m (t a)
@@ -57,6 +60,7 @@ parSequence = parTraverse identity
 parSequence_
   :: forall a t m f
    . Parallel f m
+  => Applicative f
   => Foldable t
   => t (m a)
   -> m Unit

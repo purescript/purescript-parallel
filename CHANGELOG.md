@@ -5,6 +5,8 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes:
+- Remove `Monad` and `Applicative` constraints on the `Parallel` class. Both
+types now only require `Apply`. (#43 by @artemisSystem)
 
 New features:
 
