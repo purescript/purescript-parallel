@@ -27,7 +27,7 @@ class (Apply m, Apply f) <= Parallel f m | m -> f, f -> m where
   parallel :: m ~> f
   sequential :: f ~> m
 
-instance monadParExceptT :: (Parallel f m, Apply (ExceptT e m)) => Parallel (Compose f (Either e)) (ExceptT e m) where
+instance monadParExceptT :: (Parallel f m, Monad m) => Parallel (Compose f (Either e)) (ExceptT e m) where
   parallel (ExceptT ma) = Compose (parallel ma)
   sequential (Compose fa) = ExceptT (sequential fa)
 
@@ -39,7 +39,7 @@ instance monadParWriterT :: (Monoid w, Parallel f m) => Parallel (WriterT w f) (
   parallel = mapWriterT parallel
   sequential = mapWriterT sequential
 
-instance monadParMaybeT :: (Parallel f m, Apply (MaybeT m)) => Parallel (Compose f Maybe) (MaybeT m) where
+instance monadParMaybeT :: (Parallel f m, Monad m) => Parallel (Compose f Maybe) (MaybeT m) where
   parallel (MaybeT ma) = Compose (parallel ma)
   sequential (Compose fa) = MaybeT (sequential fa)
 
