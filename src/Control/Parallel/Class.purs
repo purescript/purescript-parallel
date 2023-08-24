@@ -19,13 +19,15 @@ import Data.Profunctor.Star (Star(..))
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 
--- | The `Parallel` class abstracts over monads which support
--- | parallel composition via some related `Applicative`.
-class (Monad m, Applicative f) <= Parallel f m | m -> f, f -> m where
+-- | The `Parallel` class abstracts over pairs of `Apply`s where one of them
+-- | (`m`) composes sequentially, and the other (`f`) composes in parallel.
+-- | `m` is usually a `Monad`, which enforces the sequential nature of its
+-- | composition, but it doesn't need to be.
+class (Apply m, Apply f) <= Parallel f m | m -> f, f -> m where
   parallel :: m ~> f
   sequential :: f ~> m
 
-instance monadParExceptT :: Parallel f m => Parallel (Compose f (Either e)) (ExceptT e m) where
+instance monadParExceptT :: (Parallel f m, Monad m) => Parallel (Compose f (Either e)) (ExceptT e m) where
   parallel (ExceptT ma) = Compose (parallel ma)
   sequential (Compose fa) = ExceptT (sequential fa)
 
@@ -37,7 +39,7 @@ instance monadParWriterT :: (Monoid w, Parallel f m) => Parallel (WriterT w f) (
   parallel = mapWriterT parallel
   sequential = mapWriterT sequential
 
-instance monadParMaybeT :: Parallel f m => Parallel (Compose f Maybe) (MaybeT m) where
+instance monadParMaybeT :: (Parallel f m, Monad m) => Parallel (Compose f Maybe) (MaybeT m) where
   parallel (MaybeT ma) = Compose (parallel ma)
   sequential (Compose fa) = MaybeT (sequential fa)
 
@@ -48,7 +50,6 @@ instance monadParStar :: Parallel f m => Parallel (Star f a) (Star m a) where
 instance monadParCostar :: Parallel f m => Parallel (Costar f a) (Costar m a) where
   parallel (Costar f) = (Costar $ sequential >>> f)
   sequential (Costar f) = (Costar $ parallel >>> f)
-
 
 -- | The `ParCont` type constructor provides an `Applicative` instance
 -- | based on `ContT Unit m`, which waits for multiple continuations to be
