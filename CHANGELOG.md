@@ -5,25 +5,24 @@ Notable changes to this project are documented in this file. The format is based
 ## [Unreleased]
 
 Breaking changes:
-- Remove `Monad` and `Applicative` constraints on the `Parallel` class. Both
-types now only require `Apply`. (#43 by @artemisSystem)
 
 New features:
 
 Bugfixes:
 
 Other improvements:
+
+## [v7.0.0](https://github.com/purescript/purescript-parallel/releases/tag/v7.0.0) - 2023-08-24
+
+Breaking changes:
+- Remove `Monad` and `Applicative` constraints on the `Parallel` class. Both
+types now only require `Apply`. (#43 by @artemisSystem)
+
 
 ## [v6.0.0](https://github.com/purescript/purescript-parallel/releases/tag/v6.0.0) - 2022-04-27
 
 Breaking changes:
 - Update project and deps to PureScript v0.15.0 (#41 by @JordanMartinez)
-
-New features:
-
-Bugfixes:
-
-Other improvements:
 
 ## [v5.0.0](https://github.com/purescript/purescript-parallel/releases/tag/v5.0.0) - 2021-02-26
 
