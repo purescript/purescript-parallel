@@ -11,27 +11,32 @@ Other improvements:
 ## [v7.0.0](https://github.com/purescript/purescript-parallel/releases/tag/v7.0.0) - 2023-08-24
 
 Breaking changes:
-- Remove `Monad` and `Applicative` constraints on the `Parallel` class. Both
-types now only require `Apply`. (#43 by @artemisSystem)
 
+- Remove `Monad` and `Applicative` constraints on the `Parallel` class. Both
+  types now only require `Apply`. (#43 by @artemisSystem)
 
 ## [v6.0.0](https://github.com/purescript/purescript-parallel/releases/tag/v6.0.0) - 2022-04-27
 
 Breaking changes:
+
 - Update project and deps to PureScript v0.15.0 (#41 by @JordanMartinez)
 
 ## [v5.0.0](https://github.com/purescript/purescript-parallel/releases/tag/v5.0.0) - 2021-02-26
 
 Breaking changes:
+
 - Added support for PureScript 0.14 and dropped support for all previous versions (#37)
 
 New features:
+
 - Added instances for `Star` and `Costar` (#28)
 
 Bugfixes:
+
 - Fixed documentation typo: arguement -> argument (#33)
 
 Other improvements:
+
 - Migrated CI to GitHub Actions and updated installation instructions to use Spago (#36)
 - Replaced dead URI in tests (#32)
 - Added a changelog and pull request template (#37)

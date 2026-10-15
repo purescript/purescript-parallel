@@ -7,8 +7,8 @@ import Control.Alternative (class Alternative)
 import Control.Monad.Cont.Trans (ContT(..), runContT)
 import Control.Monad.Except.Trans (ExceptT(..))
 import Control.Monad.Maybe.Trans (MaybeT(..))
-import Control.Monad.Reader.Trans (mapReaderT, ReaderT)
-import Control.Monad.Writer.Trans (mapWriterT, WriterT)
+import Control.Monad.Reader.Trans (ReaderT, mapReaderT)
+import Control.Monad.Writer.Trans (WriterT, mapWriterT)
 import Control.Plus (class Plus)
 import Data.Either (Either)
 import Data.Functor.Compose (Compose(..))
@@ -99,19 +99,17 @@ instance altParCont :: MonadEffect m => Alt (ParCont m) where
 
     runContT c1 \a -> do
       b <- liftEffect (Ref.read done)
-      if b
-        then pure unit
-        else do
-          liftEffect (Ref.write true done)
-          k a
+      if b then pure unit
+      else do
+        liftEffect (Ref.write true done)
+        k a
 
     runContT c2 \a -> do
       b <- liftEffect (Ref.read done)
-      if b
-        then pure unit
-        else do
-          liftEffect (Ref.write true done)
-          k a
+      if b then pure unit
+      else do
+        liftEffect (Ref.write true done)
+        k a
 
 instance plusParCont :: MonadEffect m => Plus (ParCont m) where
   empty = ParCont $ ContT \_ -> pure unit
