@@ -99,14 +99,16 @@ instance altParCont :: MonadEffect m => Alt (ParCont m) where
 
     runContT c1 \a -> do
       b <- liftEffect (Ref.read done)
-      if b then pure unit
+      if b then
+        pure unit
       else do
         liftEffect (Ref.write true done)
         k a
 
     runContT c2 \a -> do
       b <- liftEffect (Ref.read done)
-      if b then pure unit
+      if b then
+        pure unit
       else do
         liftEffect (Ref.write true done)
         k a
