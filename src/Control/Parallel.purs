@@ -12,19 +12,18 @@ module Control.Parallel
 import Prelude
 
 import Control.Alternative (class Alternative)
-import Control.Parallel.Class (class Parallel, parallel, sequential, ParCont(..))
-
-import Data.Foldable (class Foldable, traverse_, oneOfMap)
+import Control.Parallel.Class (class Parallel, ParCont(..), parallel, sequential)
+import Data.Foldable (class Foldable, oneOfMap, traverse_)
 import Data.Traversable (class Traversable, traverse)
 
 -- | Apply a function to an argument under a type constructor in parallel.
 parApply
   :: forall f m a b
    . Parallel f m
-   => m (a -> b)
-   -> m a
-   -> m b
-parApply mf ma = sequential(apply (parallel mf) (parallel ma))
+  => m (a -> b)
+  -> m a
+  -> m b
+parApply mf ma = sequential (apply (parallel mf) (parallel ma))
 
 -- | Traverse a collection in parallel.
 parTraverse

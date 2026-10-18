@@ -23,9 +23,9 @@ request host = Request { host: host, path: "/" }
 main :: Effect Unit
 main = runContT (parTraverse (get <<< request) resources) logShow
   where
-    resources :: Array String
-    resources =
-      [ "www.purescript.org"
-      , "try.purescript.org"
-      , "discourse.purescript.org"
-      ]
+  resources :: Array String
+  resources =
+    [ "www.purescript.org"
+    , "try.purescript.org"
+    , "discourse.purescript.org"
+    ]
